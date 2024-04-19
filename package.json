@@ -1,0 +1,27 @@
+{
+  "name": "wallet-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.29.2",
+    "@web3modal/wagmi": "^4.1.9",
+    "next": "14.2.2",
+    "react": "^18",
+    "react-dom": "^18",
+    "viem": "^2.9.21",
+    "wagmi": "^2.5.20"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.6.1",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  }
+}
