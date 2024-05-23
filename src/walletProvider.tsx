@@ -28,7 +28,7 @@ createWeb3Modal({
   projectId,
   enableAnalytics: true,
   enableOnramp: false, // buy crypto
-  themeMode: "dark",
+  themeMode: "light",
 })
 
 interface Props {
