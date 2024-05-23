@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "tsc && pnpm biome lint ./src",
+    "fmt": "pnpm biome format --write ./src"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.29.2",
