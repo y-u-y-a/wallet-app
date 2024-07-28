@@ -1,33 +1,31 @@
-import abi from "@/contracts/EthEcho.json"
+import contractArtifact from "@/contracts/EthEcho.json"
+import { useEthersSigner } from "@/useEthersSigner"
 import { ethers } from "ethers"
-const contractABI = abi.abi
+const contractABI = contractArtifact.abi
 
 export default function Home() {
   // const currentChainId = useChainId()
   // const { address: walletAddress } = useAccount()
   // const { data: balance } = useBalance({ address: walletAddress })
-  // const signer = useEthersSigner()
+  const signer = useEthersSigner()
 
-  const handleWriteContract = async () => {
+  const writeContract = async () => {
     try {
-      if (!window.ethereum) throw new Error("Ethereum object doesn't exist!")
+      if (!window.ethereum || !signer) throw new Error("Ethereum object doesn't exist!")
 
-      const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_JSON_RPC_URL)
-      const wallet = new ethers.Wallet(process.env.NEXT_PUBLIC_WALLET_PRIVATE_KEY, provider)
-      const contract = new ethers.Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, contractABI, wallet)
-
-      /* 署名を取得 */
       // const signer = await new ethers.BrowserProvider(window.ethereum).getSigner()
-      // const signer = await provider.getSigner(walletAddress)
-      // console.log("Signer:", { signer })
+      const contract = new ethers.Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, contractABI, signer)
+      const mahola = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_JSON_RPC_URL)
 
-      /** コントラクト実行 */
-      // const contractWithSigner = contract.connect(signer)
-      console.log("Before count:", ethers.toNumber(await contract.getTotalEchoes()))
-      const tx = await contract.addEcho()
-      await tx.wait()
-      console.log("After count:", ethers.toNumber(await contract.getTotalEchoes()))
-      console.log("tx.hash: ", tx.hash)
+      // 署名したTxを取得する
+      console.info("Before count:", ethers.toNumber(await contract.getTotalEchoes()))
+      const tx = await contract.addEcho.populateTransaction()
+      const signedTx = await signer.signTransaction(tx)
+      console.info("success signer.sendTransaction")
+
+      // 署名したTxをmaholajsonRPC経由で送信する
+      await (await mahola.broadcastTransaction(signedTx)).wait()
+      console.info("After count:", ethers.toNumber(await contract.getTotalEchoes()))
     } catch (error) {
       console.error(error)
     }
@@ -35,10 +33,8 @@ export default function Home() {
 
   return (
     <div>
-      {/* {walletAddress && <p children={`walletAddress: ${walletAddress}`} />}
-      {balance && <p children={`balance: ${balance.value} ${balance.symbol}`} />} */}
       <w3m-button />
-      <button type="button" onClick={handleWriteContract}>
+      <button type="button" onClick={writeContract}>
         コントラクトを実行する
       </button>
     </div>
