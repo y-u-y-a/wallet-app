@@ -1,4 +1,8 @@
 {
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#a0a0a0",
+    "activityBar.foreground": "#000000"
+  },
   /**
     Biome: https://biomejs.dev/ja/reference/vscode/
   */
