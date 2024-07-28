@@ -13,6 +13,7 @@
     "deploy:script": "npx hardhat run scripts/deploy.ts",
     "deploy:local": "npx hardhat run scripts/deploy.ts --network localhost",
     "deploy:sepolia": "npx hardhat run scripts/deploy.ts --network sepolia",
+    "deploy:amoy": "npx hardhat run scripts/deploy.ts --network amoy",
     "lint": "tsc && pnpm biome lint ./src",
     "format": "biome format --write ./src"
   },
