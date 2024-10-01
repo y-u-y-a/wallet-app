@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { defaultWagmiConfig } from "@web3modal/wagmi"
 import { createWeb3Modal } from "@web3modal/wagmi/react"
 import type { ReactNode } from "react"
+import { polygon, polygonAmoy } from "viem/chains"
 import { type State, WagmiProvider, cookieStorage, createStorage } from "wagmi"
-import { polygonAmoy } from "wagmi/chains"
 
 // Get projectId at https://cloud.walletconnect.com
 const projectId = "ddd705791e735d28580d1bc518dd0d39"
@@ -19,7 +19,7 @@ const queryClient = new QueryClient()
 // })
 
 const wagmiConfig = defaultWagmiConfig({
-  chains: [polygonAmoy],
+  chains: [polygon, polygonAmoy],
   projectId,
   metadata: {
     name: "sample",
@@ -36,7 +36,7 @@ createWeb3Modal({
   projectId,
   enableAnalytics: true,
   enableOnramp: false, // buy crypto
-  themeMode: "light",
+  themeMode: "dark",
 })
 
 interface Props {

@@ -20,9 +20,8 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       readonly NODE_ENV: "development" | "production" | "test"
-      readonly NEXT_PUBLIC_WALLET_PRIVATE_KEY: string
-      readonly NEXT_PUBLIC_JSON_RPC_URL: string
-      readonly NEXT_PUBLIC_CONTRACT_ADDRESS: string
+      readonly NEXT_PUBLIC_ALCHEMY_API_KEY: string
+      // readonly NEXT_PUBLIC_CONTRACT_ADDRESS: string
     }
   }
 }

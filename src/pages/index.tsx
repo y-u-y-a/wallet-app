@@ -1,80 +1,80 @@
-import contractArtifact from "@/contracts/EthEcho.json"
-import { type TypedDataDomain, type TypedDataField, ethers } from "ethers"
-import { useChainId } from "wagmi"
-const contractABI = contractArtifact.abi
+"use client"
+
+import { Button, Container, Image, Paper, SimpleGrid, Stack, Text, TextInput } from "@mantine/core"
+import { Alchemy, Network, type OwnedNft } from "alchemy-sdk"
+import { useEffect, useState } from "react"
+import { type Address, erc721Abi } from "viem"
+import { polygon } from "viem/chains"
+import { useAccount, useChainId, useWriteContract } from "wagmi"
+
+/** ウォレットアドレスに紐づくNFTを取得 */
+async function getNFTs(chainId: number, walletAddress: Address): Promise<OwnedNft[]> {
+  const alchemy = new Alchemy({
+    apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY,
+    network: chainId === polygon.id ? Network.MATIC_MAINNET : Network.MATIC_AMOY,
+  })
+  const { ownedNfts } = await alchemy.nft.getNftsForOwner(walletAddress)
+  return ownedNfts
+}
 
 export default function Home() {
   const chainId = useChainId()
-  // const { address: signerAddress } = useAccount()
-  // const { data: balance } = useBalance({ address: walletAddress })
-  // const signer = useEthersSigner()
+  const account = useAccount()
+  const { writeContract } = useWriteContract()
+  const [NFTContractAddress, setNFTContractAddress] = useState<Address>()
+  const [toAddress, setToAddress] = useState<Address>()
+  const [currentNFTs, setCurrentNFTs] = useState<OwnedNft[]>([])
+  const [selectedNFT, setSelectedNFT] = useState<OwnedNft>()
 
-  const writeContract = async () => {
-    try {
-      if (!window.ethereum) throw new Error("Ethereum object doesn't exist!")
+  /** 初期表示データ取得 */
+  useEffect(() => {
+    if (!account.address) return
+    getNFTs(chainId, account.address).then((nfts) => {
+      console.log({ nfts })
+      setCurrentNFTs(nfts)
+    })
+  }, [chainId, account.address])
 
-      const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS
-      const mahola = new ethers.JsonRpcProvider("https://polygon-amoy.g.alchemy.com/v2/3wTx5ulLjQHl_eq-Lsaenu5XZ_48ax7I")
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      const contract = new ethers.Contract(contractAddress, contractABI, signer)
-      const signerAddress = await signer.getAddress()
-
-      console.log({ signerAddress })
-
-      const unsignedTx = {
-        chainId,
-        to: contractAddress,
-        data: new ethers.Interface(["function addEcho()"]).encodeFunctionData("addEcho"),
-        nonce: await provider.getTransactionCount(signerAddress, "pending"), // 一意
-        gasLimit: ethers.toNumber(22000),
-        gasPrice: ethers.parseUnits("10", "gwei"),
-        value: 0, // 送金するMATICの値
-      }
-      // const gasLimit = await provider.estimateGas(baseTx)
-
-      const domain: TypedDataDomain = {
-        name: "EthEcho",
-        version: "1",
-        chainId,
-        verifyingContract: contractAddress,
-      }
-      const types: Record<string, TypedDataField[]> = {
-        // キーはprimaryTypeに合わせる
-        AddEcho: [
-          { name: "from", type: "address" },
-          { name: "functionSignature", type: "string" },
-        ],
-      }
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      const message: Record<string, any> = {
-        from: signerAddress,
-        functionSignature: "addEcho()",
-      }
-
-      // 署名済Txを作成
-      // const unsignedTx = { ...baseTx, gasLimit }
-      const signature = ethers.Signature.from(await signer.signTypedData(domain, types, message))
-      console.log({ signature })
-      const signedTx = ethers.Transaction.from({ ...unsignedTx, signature, from: signerAddress })
-      console.log({ signedTx })
-      // 署名済Txを送信
-      console.info("Before count:", ethers.toNumber(await contract.getTotalEchoes()))
-      const txResponse = await mahola.broadcastTransaction(signedTx.serialized)
-      console.info({ txResponse })
-      await txResponse.wait()
-      console.info("After count:", ethers.toNumber(await contract.getTotalEchoes()))
-    } catch (error) {
-      console.error(error)
+  /** NFTを譲渡する */
+  async function transferNFT() {
+    if (!toAddress || !selectedNFT || !NFTContractAddress) {
+      console.log({ toAddress, selectedNFT, NFTContractAddress })
+      return
     }
+    writeContract({
+      address: NFTContractAddress,
+      abi: erc721Abi,
+      functionName: "safeTransferFrom",
+      // @ts-ignore
+      args: [account.address, toAddress, selectedNFT.tokenId], // from,to,tokenId
+    })
   }
 
   return (
-    <div>
+    <Container my={40}>
       <w3m-button />
-      <button type="button" onClick={writeContract}>
-        コントラクトを実行する
-      </button>
-    </div>
+      <Stack mt={20} gap={32}>
+        <TextInput
+          label="contractAddress"
+          placeholder="NFTのコントラクトアドレス"
+          onChange={(e) => setNFTContractAddress(e.target.value as Address)}
+        />
+        <TextInput label="fromAddress" value={`${account.address?.slice(0, 4)}......${account.address?.slice(-6)}`} disabled />
+        <TextInput label="toAddress" placeholder="譲渡先のウォレットアドレス" onChange={(e) => setToAddress(e.target.value as Address)} />
+        <Button
+          onClick={transferNFT}
+          children={selectedNFT ? `TokenId=${selectedNFT.tokenId} を転送する` : "譲渡するNFTを選択してください"}
+          disabled={!selectedNFT || !toAddress || !NFTContractAddress}
+        />
+      </Stack>
+      <SimpleGrid mt={40} cols={2}>
+        {currentNFTs.map((nft) => (
+          <Paper bg={nft.tokenId === selectedNFT?.tokenId ? "teal.4" : "gray.3"} radius="sm" key={nft.tokenId} onClick={() => setSelectedNFT(nft)}>
+            <Image src={nft.image.cachedUrl} alt={nft.name} fit="cover" radius="sm" />
+            <Text mt={8} px={16} pb={16} children={`TokenId: ${nft.tokenId}`} />
+          </Paper>
+        ))}
+      </SimpleGrid>
+    </Container>
   )
 }
